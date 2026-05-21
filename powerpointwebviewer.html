@@ -234,6 +234,11 @@
       <p>Display any website directly inside your slides</p>
     </div>
     <div class="feature-item">
+      <div class="icon">🎬</div>
+      <h3>Video Ready</h3>
+      <p>YouTube &amp; Vimeo links auto-convert to a playable embed</p>
+    </div>
+    <div class="feature-item">
       <div class="icon">🎯</div>
       <h3>Per-Slide URLs</h3>
       <p>Each slide remembers its own website URL</p>
@@ -257,9 +262,10 @@
     <p><strong>Key features of the viewer:</strong></p>
     <ul>
       <li>Auto-adds <code>https://</code> if you forget the protocol</li>
+      <li>Plays embedded video and auto-converts YouTube &amp; Vimeo links to a playable embed</li>
       <li>Shows a loading spinner while the page loads</li>
       <li>Friendly error messages if a site can't be embedded</li>
-      <li>Hide/show controls button for presentation mode</li>
+      <li>Hide/show controls, reload, and fullscreen buttons for presentation mode</li>
       <li>Press <strong>Enter</strong> to load (no need to click the button)</li>
       <li>Saves the URL per slide using Office Settings API</li>
     </ul>
@@ -331,6 +337,8 @@
     &lt;p&gt;Enter a URL above and click Load&lt;/p&gt;
   &lt;/div&gt;
   &lt;iframe id="webFrame" src=""
+    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+    allowfullscreen
     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"&gt;
   &lt;/iframe&gt;
 
@@ -387,7 +395,7 @@
            xsi:type="ContentApp"&gt;
 
   &lt;Id&gt;e2b7c1a0-1234-5678-9abc-def012345678&lt;/Id&gt;
-  &lt;Version&gt;1.1.0.0&lt;/Version&gt;
+  &lt;Version&gt;1.3.0.0&lt;/Version&gt;
   &lt;ProviderName&gt;PeopleWorks Services&lt;/ProviderName&gt;
   &lt;DefaultLocale&gt;en-US&lt;/DefaultLocale&gt;
 
@@ -492,10 +500,16 @@
       <li><strong>Workaround:</strong> Click outside the add-in first, then click the border/edge of the add-in frame to select it (not the content inside). You should see resize handles appear.</li>
       <li>If that doesn't work, use <strong>Ctrl+Z</strong> (undo) to revert the resize, or delete the add-in and re-insert it.</li>
     </ul>
+    <p style="margin-top: 1em;"><strong>Pages with video (YouTube / Vimeo):</strong></p>
+    <ul>
+      <li>Paste a normal YouTube or Vimeo link &mdash; the add-in automatically converts it to an embeddable player so the video shows inside the slide.</li>
+      <li>Make sure the viewer is updated to version 1.3.0 or later, which adds the media permissions needed for video playback.</li>
+      <li>For other pages that contain video, playback depends on whether the site allows iframe embedding.</li>
+    </ul>
     <p style="margin-top: 1em;"><strong>Sites that typically work in frames:</strong></p>
     <ul>
-      <li>Wikipedia, custom dashboards, Grafana, internal tools, documentation sites</li>
-      <li>Sites that do NOT work: Google, YouTube, Facebook, Twitter/X, most banking sites</li>
+      <li>Wikipedia, custom dashboards, Grafana, internal tools, documentation sites, YouTube/Vimeo videos</li>
+      <li>Sites that do NOT work: Google, Facebook, Twitter/X, most banking sites</li>
     </ul>
   </div>
 
@@ -513,6 +527,11 @@
       <div class="icon">🌐</div>
       <h3>Sitios Web en Vivo</h3>
       <p>Muestra cualquier sitio web directamente en tus diapositivas</p>
+    </div>
+    <div class="feature-item">
+      <div class="icon">🎬</div>
+      <h3>Listo para Video</h3>
+      <p>Los links de YouTube y Vimeo se convierten en un video reproducible</p>
     </div>
     <div class="feature-item">
       <div class="icon">🎯</div>
@@ -538,9 +557,10 @@
     <p><strong>Características del viewer mejorado:</strong></p>
     <ul>
       <li>Agrega <code>https://</code> automáticamente si olvidas el protocolo</li>
+      <li>Reproduce video incrustado y convierte links de YouTube y Vimeo en un video reproducible</li>
       <li>Muestra un spinner de carga mientras la página carga</li>
       <li>Mensajes de error amigables si un sitio no puede incrustarse</li>
-      <li>Botón para ocultar/mostrar controles en modo presentación</li>
+      <li>Botones para ocultar/mostrar controles, recargar y pantalla completa</li>
       <li>Presiona <strong>Enter</strong> para cargar (no necesitas hacer clic)</li>
       <li>Guarda la URL por diapositiva usando Office Settings API</li>
     </ul>
@@ -636,10 +656,16 @@
       <li><strong>Solución:</strong> Haz clic fuera del complemento primero, luego haz clic en el borde/marco del complemento (no en el contenido). Deberían aparecer los controles de redimensionar.</li>
       <li>Si no funciona, usa <strong>Ctrl+Z</strong> (deshacer) para revertir el cambio de tamaño, o elimina el complemento y vuelve a insertarlo.</li>
     </ul>
+    <p style="margin-top: 1em;"><strong>Páginas con video (YouTube / Vimeo):</strong></p>
+    <ul>
+      <li>Pega un link normal de YouTube o Vimeo &mdash; el complemento lo convierte automáticamente en un reproductor incrustable para que el video se muestre dentro de la diapositiva.</li>
+      <li>Asegúrate de tener el viewer actualizado a la versión 1.3.0 o posterior, que agrega los permisos de medios necesarios para reproducir video.</li>
+      <li>Para otras páginas que contienen video, la reproducción depende de si el sitio permite incrustarse en iframes.</li>
+    </ul>
     <p style="margin-top: 1em;"><strong>Sitios que típicamente funcionan en frames:</strong></p>
     <ul>
-      <li>Wikipedia, dashboards personalizados, Grafana, herramientas internas, sitios de documentación</li>
-      <li>Sitios que NO funcionan: Google, YouTube, Facebook, Twitter/X, la mayoría de sitios bancarios</li>
+      <li>Wikipedia, dashboards personalizados, Grafana, herramientas internas, sitios de documentación, videos de YouTube/Vimeo</li>
+      <li>Sitios que NO funcionan: Google, Facebook, Twitter/X, la mayoría de sitios bancarios</li>
     </ul>
   </div>
 

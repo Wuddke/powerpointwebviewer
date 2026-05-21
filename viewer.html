@@ -9,7 +9,7 @@
     body {
       width: 100%; height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden;
       background: linear-gradient(135deg, #4a90d9, #2c6cb0);
-      padding: 3px;
+      padding: 10px;
     }
 
     /* Control bar */
@@ -24,6 +24,7 @@
       padding: 10px 14px;
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.12);
       transition: opacity 0.3s ease, transform 0.3s ease;
@@ -91,6 +92,15 @@
       padding: 8px 10px;
     }
     .btn-hide:hover { background: #ddd; }
+
+    .btn-icon {
+      background: #e8e8e8;
+      color: #555;
+      padding: 8px 11px;
+      font-size: 15px;
+      line-height: 1;
+    }
+    .btn-icon:hover { background: #ddd; }
 
     /* Toggle button (when controls are hidden) */
     #toggleBtn {
@@ -298,7 +308,9 @@
     <span class="icon">🌐</span>
     <input id="urlInput" type="text" placeholder="Enter website URL (e.g. https://example.com)" />
     <button class="btn btn-primary" onclick="loadUrl()">Load</button>
-    <button id="btnOpenWindow" class="btn btn-window" onclick="openInDialog()" title="Open in browser window" style="display:none;">Window</button>
+    <button class="btn btn-icon" onclick="reloadFrame()" title="Reload page">↻</button>
+    <button class="btn btn-icon" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+    <button id="btnOpenWindow" class="btn btn-window" onclick="openInDialog()" title="Open in a separate window">Window</button>
     <button class="btn btn-hide" onclick="toggleControls()" title="Hide controls">✕</button>
   </div>
 
@@ -313,6 +325,7 @@
     <div class="emoji">🌐</div>
     <h2>Live Website Viewer</h2>
     <p>Enter a website URL above and click <strong>Load</strong> to display it inside this slide.</p>
+    <p style="margin-top: 8px; font-size: 13px; color: #999;">💡 Tip: paste a YouTube or Vimeo link to embed a video.</p>
     <div style="margin-top: 24px; opacity: 0.5; font-size: 12px; color: #999;">
       Created by <strong>Pedro Hernandez</strong> &mdash; PeopleWorks Services
     </div>
@@ -338,7 +351,10 @@
   </div>
 
   <!-- Website frame -->
-  <iframe id="webFrame" src="" sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"></iframe>
+  <iframe id="webFrame" src=""
+          allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; accelerometer; gyroscope; web-share"
+          allowfullscreen
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-presentation allow-downloads allow-modals"></iframe>
 
 </div><!-- /appWrapper -->
 
@@ -351,7 +367,7 @@
     const toggleBtn = document.getElementById('toggleBtn');
     const branding = document.getElementById('branding');
     const envBadge = document.getElementById('envBadge');
-    const btnOpenWindow = document.getElementById('btnOpenWindow');
+    const appWrapper = document.getElementById('appWrapper');
 
     let controlsVisible = true;
     let isOnline = false;        // true if running in PowerPoint Online
@@ -369,8 +385,6 @@
           isOnline = true;
           envBadge.textContent = 'POWERPOINT ONLINE';
           envBadge.className = 'online';
-          // Show the "Window" button for Online users
-          btnOpenWindow.style.display = '';
         } else {
           isOnline = false;
           envBadge.textContent = 'DESKTOP';
@@ -403,6 +417,62 @@
       }
     }
 
+    // ─── Convert YouTube / Vimeo links to embeddable URLs ─
+    // Regular video pages (youtube.com/watch, youtu.be, vimeo.com/ID)
+    // block iframe embedding. Their /embed/ player URLs do not.
+    function toEmbedUrl(url) {
+      try {
+        var u = new URL(url);
+        var host = u.hostname.replace(/^www\./i, '').toLowerCase();
+
+        // ─── YouTube ───
+        if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'youtube-nocookie.com') {
+          if (u.pathname.indexOf('/embed/') === 0) return url; // already embeddable
+          var videoId = u.searchParams.get('v');
+          var shortMatch = u.pathname.match(/^\/(?:shorts|live)\/([A-Za-z0-9_-]+)/);
+          if (shortMatch) videoId = shortMatch[1];
+          var listId = u.searchParams.get('list');
+          var startAt = parseInt(u.searchParams.get('t') || u.searchParams.get('start'), 10);
+          if (videoId) {
+            var params = [];
+            if (!isNaN(startAt) && startAt > 0) params.push('start=' + startAt);
+            if (listId) params.push('list=' + listId);
+            return 'https://www.youtube.com/embed/' + videoId +
+                   (params.length ? '?' + params.join('&') : '');
+          }
+          if (listId && u.pathname.indexOf('/playlist') === 0) {
+            return 'https://www.youtube.com/embed/videoseries?list=' + listId;
+          }
+          return url;
+        }
+
+        // ─── YouTube short links (youtu.be) ───
+        if (host === 'youtu.be') {
+          var id = u.pathname.split('/').filter(Boolean)[0];
+          if (id) {
+            var t = parseInt(u.searchParams.get('t'), 10);
+            return 'https://www.youtube.com/embed/' + id +
+                   (!isNaN(t) && t > 0 ? '?start=' + t : '');
+          }
+          return url;
+        }
+
+        // ─── Vimeo ───
+        if (host === 'vimeo.com') {
+          if (u.pathname.indexOf('/video/') !== -1) return url; // already embeddable
+          var segments = u.pathname.split('/').filter(Boolean);
+          for (var i = segments.length - 1; i >= 0; i--) {
+            if (/^\d+$/.test(segments[i])) {
+              return 'https://player.vimeo.com/video/' + segments[i];
+            }
+          }
+        }
+      } catch (e) {
+        // Not a parseable URL — leave it unchanged
+      }
+      return url;
+    }
+
     // ─── Show error in overlay ────────────────────────────
     function showError(title, message, showButtons) {
       overlay.classList.remove('hidden');
@@ -430,6 +500,7 @@
       let html = '<div class="emoji">🌐</div>';
       html += '<h2>Live Website Viewer</h2>';
       html += '<p>Enter a website URL above and click <strong>Load</strong> to display it inside this slide.</p>';
+      html += '<p style="margin-top: 8px; font-size: 13px; color: #999;">💡 Tip: paste a YouTube or Vimeo link to embed a video.</p>';
 
       if (isOnline) {
         html += '<div class="tip" style="margin-top: 16px;"><strong>PowerPoint Online detected:</strong> Some websites may not display inside the frame. If a site does not load, use the <strong>"Window"</strong> button to open it in a separate browser window.</div>';
@@ -441,10 +512,10 @@
       overlay.innerHTML = html;
     }
 
-    // ─── Toggle controls ──────────────────────────────────
-    function toggleControls() {
-      controlsVisible = !controlsVisible;
-      if (controlsVisible) {
+    // ─── Show / hide controls ─────────────────────────────
+    function setControlsVisible(visible) {
+      controlsVisible = visible;
+      if (visible) {
         config.classList.remove('hidden');
         toggleBtn.classList.remove('visible');
         envBadge.classList.remove('hidden');
@@ -457,6 +528,55 @@
         branding.classList.add('hidden');
       }
     }
+
+    function toggleControls() {
+      setControlsVisible(!controlsVisible);
+    }
+
+    // ─── Reload the current page ──────────────────────────
+    function reloadFrame() {
+      if (!currentUrl) {
+        showWelcome();
+        return;
+      }
+      overlay.classList.add('hidden');
+      branding.classList.add('hidden');
+      loading.classList.add('active');
+      iframeLoadFailed = false;
+      webFrame.src = currentUrl;
+      startLoadTimeout();
+    }
+
+    // ─── Fullscreen toggle ────────────────────────────────
+    function toggleFullscreen() {
+      var fsElement = document.fullscreenElement || document.webkitFullscreenElement;
+      if (fsElement) {
+        var exitFs = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exitFs) exitFs.call(document);
+        return;
+      }
+      var requestFs = appWrapper.requestFullscreen || appWrapper.webkitRequestFullscreen;
+      if (requestFs) {
+        try {
+          var result = requestFs.call(appWrapper);
+          if (result && typeof result.catch === 'function') {
+            // Fullscreen blocked (common inside Office) — fall back to a clean view
+            result.catch(function () { setControlsVisible(false); });
+          }
+        } catch (e) {
+          setControlsVisible(false);
+        }
+      } else {
+        setControlsVisible(false);
+      }
+    }
+
+    function onFullscreenChange() {
+      var active = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setControlsVisible(!active);
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
     // ─── Open URL using Office Dialog API ─────────────────
     function openInDialog() {
@@ -516,7 +636,7 @@
             true
           );
         }
-      }, isOnline ? 8000 : 15000); // Shorter timeout for Online since it's more likely to fail
+      }, isOnline ? 12000 : 15000); // Shorter timeout for Online since it's more likely to fail
     }
 
     // ─── Save URL to Office settings ──────────────────────
@@ -533,21 +653,23 @@
 
     // ─── Load URL into iframe ─────────────────────────────
     function loadUrl() {
-      let url = normalizeUrl(urlInput.value);
+      let typedUrl = normalizeUrl(urlInput.value);
 
-      if (!url) {
+      if (!typedUrl) {
         showError('Empty URL', 'Please enter a website URL to load.', false);
         return;
       }
 
-      if (!isValidUrl(url)) {
+      if (!isValidUrl(typedUrl)) {
         showError('Invalid URL', 'The URL you entered is not valid. Please check it and try again.', false);
         return;
       }
 
-      // Update input with normalized URL
-      urlInput.value = url;
-      currentUrl = url;
+      // Show the normalized URL the user typed
+      urlInput.value = typedUrl;
+
+      // Convert YouTube / Vimeo links to their embeddable player URL
+      currentUrl = toEmbedUrl(typedUrl);
 
       // Show loading, hide branding
       overlay.classList.add('hidden');
@@ -556,13 +678,13 @@
       iframeLoadFailed = false;
 
       // Set iframe src
-      webFrame.src = url;
+      webFrame.src = currentUrl;
 
       // Start load timeout detection
       startLoadTimeout();
 
-      // Save URL
-      saveUrl(url);
+      // Save the URL the user typed (re-converted when reloaded)
+      saveUrl(typedUrl);
     }
 
     // ─── Handle iframe load events ────────────────────────
@@ -633,11 +755,11 @@
           var savedUrl = Office.context.document.settings.get('webViewerUrl');
           if (savedUrl) {
             urlInput.value = savedUrl;
-            currentUrl = savedUrl;
+            currentUrl = toEmbedUrl(savedUrl);
             overlay.classList.add('hidden');
             branding.classList.add('hidden');
             loading.classList.add('active');
-            webFrame.src = savedUrl;
+            webFrame.src = currentUrl;
             startLoadTimeout();
           }
         }

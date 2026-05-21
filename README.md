@@ -9,8 +9,9 @@ Embed live, interactive websites directly inside your PowerPoint presentations. 
 ## Features
 
 - **Live websites inside slides** - Display any website directly in PowerPoint
+- **Video support** - Embedded video plays (autoplay, fullscreen, DRM); YouTube & Vimeo links are auto-converted to their embeddable player
 - **Per-slide URLs** - Each slide remembers its own URL
-- **Presentation mode** - Hide/show controls with one click
+- **Presentation mode** - Hide/show controls, reload, or go fullscreen from the toolbar
 - **Smart URL handling** - Auto-adds `https://` if you forget the protocol
 - **Error handling** - Friendly messages when a site can't be embedded
 - **Zero dependencies** - Just HTML, JS, and an XML manifest
@@ -207,7 +208,8 @@ server {
 
 ## Limitations
 
-- Some websites block iframe embedding (e.g., Google, Facebook) via `X-Frame-Options` or CSP headers
+- Some websites block iframe embedding (e.g., Google, Facebook, X/Twitter) via `X-Frame-Options` or CSP headers — use the **Window** button to open those in a separate window
+- YouTube and Vimeo **video links are auto-converted** to their embeddable player so they display correctly; other video pages depend on the site's own embedding policy
 - The viewer requires an internet connection to load websites
 
 ## Contributing
