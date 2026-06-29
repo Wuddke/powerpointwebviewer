@@ -202,7 +202,7 @@
       height: 100%;
       border: none;
       background: white;
-      transform-origin: top left;
+      /* transform-origin: top left; removed, no longer using transform */
     }
 
     /* Error / status overlay */
@@ -433,11 +433,14 @@
       save = (save !== false);
       zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct));
       var scale = zoomLevel / 100;
-      webFrame.style.transform      = 'scale(' + scale + ')';
-      webFrame.style.transformOrigin= 'top left';
-      webFrame.style.width          = (100 / scale) + '%';
-      webFrame.style.height         = (100 / scale) + '%';
-      zoomDisplay.textContent       = zoomLevel + '%';
+
+      // Using native CSS 'zoom' instead of 'transform: scale()' prevents blurriness.
+      // It forces the browser to re-render the layout natively rather than shrinking a rasterized image.
+      webFrame.style.zoom = scale;
+      webFrame.style.width = (100 / scale) + '%';
+      webFrame.style.height = (100 / scale) + '%';
+
+      zoomDisplay.textContent = zoomLevel + '%';
       if (save) saveZoom(zoomLevel);
     }
 
