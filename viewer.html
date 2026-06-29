@@ -24,10 +24,21 @@
       padding: 10px 14px;
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap; /* Prevent wrapping to keep height consistent */
+      overflow-x: auto;  /* Allow horizontal scrolling if menu is too wide */
+      overflow-y: hidden;
       gap: 8px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.12);
       transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Scrollbar styling for the menu */
+    #config::-webkit-scrollbar {
+      height: 6px;
+    }
+    #config::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
     }
 
     #config.hidden {
@@ -49,7 +60,7 @@
       font-size: 14px;
       outline: none;
       transition: border-color 0.2s;
-      min-width: 0;
+      min-width: 150px; /* Prevents input from disappearing completely */
     }
 
     #urlInput:focus {
@@ -69,6 +80,7 @@
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .btn:active { transform: scale(0.96); }
@@ -110,6 +122,7 @@
       border-left: 1px solid #e0e0e0;
       padding-left: 8px;
       margin-left: 2px;
+      flex-shrink: 0;
     }
 
     #zoomGroup .btn-icon {
@@ -183,7 +196,7 @@
     }
     #envBadge.hidden { opacity: 0; pointer-events: none; }
 
-    /* Inner wrapper - white area inside the blue grab border */
+    /* Inner wrapper */
     #appWrapper {
       position: relative;
       width: 100%;
@@ -193,16 +206,52 @@
       overflow: hidden;
     }
 
+    /* 
+      Frame Wrapper: Sits perfectly between the config bar and branding bar.
+      Allows native scrollbars and centers the website when zoomed out.
+    */
+    #frameWrapper {
+      position: absolute;
+      top: 65px;
+      left: 0;
+      right: 0;
+      bottom: 28px;
+      overflow: auto;
+      background: #f0f2f5;
+      display: flex;
+      justify-content: safe center;
+      align-items: safe center;
+      transition: top 0.3s ease, bottom 0.3s ease;
+    }
+
+    /* When controls are hidden, expand the frame to fill the screen */
+    #frameWrapper.fullscreen-mode {
+      top: 0;
+      bottom: 0;
+    }
+
+    /* Scrollbar styling for the iframe area */
+    #frameWrapper::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    #frameWrapper::-webkit-scrollbar-thumb {
+      background: #b0b0b0;
+      border-radius: 4px;
+    }
+    #frameWrapper::-webkit-scrollbar-track {
+      background: #f0f2f5;
+    }
+
     /* iframe */
     #webFrame {
-      position: absolute;
-      top: 0;
-      left: 0;
+      position: relative;
+      display: block;
       width: 100%;
       height: 100%;
       border: none;
       background: white;
-      /* transform-origin: top left; removed, no longer using transform */
+      flex-shrink: 0;
     }
 
     /* Error / status overlay */
@@ -268,6 +317,8 @@
       align-items: center;
       justify-content: space-between;
       font-size: 11px;
+      overflow: hidden;
+      white-space: nowrap;
       transition: opacity 0.3s ease;
     }
     #branding.hidden { opacity: 0; pointer-events: none; }
@@ -287,6 +338,7 @@
       font-weight: 900;
       font-size: 12px;
       color: white;
+      flex-shrink: 0;
     }
     #branding .brand-name {
       font-weight: 700;
@@ -396,25 +448,28 @@
     <div class="loading-text">Loading website...</div>
   </div>
 
-  <!-- Website frame -->
-  <iframe id="webFrame" src=""
-          allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; accelerometer; gyroscope; web-share"
-          allowfullscreen
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-presentation allow-downloads allow-modals"></iframe>
+  <!-- Website frame wrapper for centering and scrolling -->
+  <div id="frameWrapper">
+    <iframe id="webFrame" src=""
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; accelerometer; gyroscope; web-share"
+            allowfullscreen
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation allow-presentation allow-downloads allow-modals"></iframe>
+  </div>
 
 </div><!-- /appWrapper -->
 
   <script>
-    const urlInput    = document.getElementById('urlInput');
-    const webFrame    = document.getElementById('webFrame');
-    const overlay     = document.getElementById('overlay');
-    const loading     = document.getElementById('loading');
-    const config      = document.getElementById('config');
-    const toggleBtn   = document.getElementById('toggleBtn');
-    const branding    = document.getElementById('branding');
-    const envBadge    = document.getElementById('envBadge');
-    const appWrapper  = document.getElementById('appWrapper');
-    const zoomDisplay = document.getElementById('zoomDisplay');
+    const urlInput     = document.getElementById('urlInput');
+    const webFrame     = document.getElementById('webFrame');
+    const overlay      = document.getElementById('overlay');
+    const loading      = document.getElementById('loading');
+    const config       = document.getElementById('config');
+    const toggleBtn    = document.getElementById('toggleBtn');
+    const branding     = document.getElementById('branding');
+    const envBadge     = document.getElementById('envBadge');
+    const appWrapper   = document.getElementById('appWrapper');
+    const zoomDisplay  = document.getElementById('zoomDisplay');
+    const frameWrapper = document.getElementById('frameWrapper');
 
     let controlsVisible = true;
     let isOnline        = false;
@@ -434,11 +489,13 @@
       zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, pct));
       var scale = zoomLevel / 100;
 
-      // Using native CSS 'zoom' instead of 'transform: scale()' prevents blurriness.
-      // It forces the browser to re-render the layout natively rather than shrinking a rasterized image.
+      // Native CSS 'zoom' prevents blurriness.
+      // The #frameWrapper handles centering (when zoomed out) and native scrollbars (when zoomed in).
       webFrame.style.zoom = scale;
-      webFrame.style.width = (100 / scale) + '%';
-      webFrame.style.height = (100 / scale) + '%';
+      
+      // Keep width/height at 100% so the internal website layout doesn't reflow awkwardly
+      webFrame.style.width = '100%';
+      webFrame.style.height = '100%';
 
       zoomDisplay.textContent = zoomLevel + '%';
       if (save) saveZoom(zoomLevel);
@@ -585,11 +642,13 @@
         toggleBtn.classList.remove('visible');
         envBadge.classList.remove('hidden');
         if (!currentUrl) branding.classList.remove('hidden');
+        frameWrapper.classList.remove('fullscreen-mode');
       } else {
         config.classList.add('hidden');
         toggleBtn.classList.add('visible');
         envBadge.classList.add('hidden');
         branding.classList.add('hidden');
+        frameWrapper.classList.add('fullscreen-mode'); // Expand iframe to full screen
       }
     }
 
